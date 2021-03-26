@@ -8,6 +8,7 @@ import Add from "./pages/Add";
 import Welcome from "./components/Welcome";
 import Navbar from "./components/Navbar";
 import Verify from "./pages/Verify";
+import Discard from "./pages/Discard";
 import Edit from "./pages/Edit";
 import NotFound from "./components/NotFound";
 
@@ -46,6 +47,7 @@ function App() {
           render={() => <Login user={user} setUser={setUser} />}
         />
         <Route path="/add" exact render={() => <Add user={user} />} />
+        <Route path="/discard" exact render={() => <Discard user={user} />} />
         <Route path="/verify" exact render={() => <Verify user={user} />} />
         <Route
           path="/edit/:id"

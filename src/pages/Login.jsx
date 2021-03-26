@@ -8,7 +8,7 @@ import "../styles.css";
 export default function Login({ user, setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [role, setRole] = useState("admin");
   const [error, setError] = useState(false);
   const [currentRole, setCurrentRole] = useState("admin");
 
@@ -16,7 +16,9 @@ export default function Login({ user, setUser }) {
     e.preventDefault();
     setError(false);
     if (email && password && role) {
+      console.log("executed")
       const response = await loginWithFirestore(role, email, password);
+      console.log(response)
 
       if (response?.status === "SUCCESS") {
         const { data } = response;

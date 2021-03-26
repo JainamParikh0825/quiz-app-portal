@@ -49,7 +49,17 @@ export default function Question({
       });
   };
 
-  const discard = (quiz, id, type) => {
+  const discard = (quiz, id, type, que) => {
+    // * Remove from hash values
+    firestore.collection("hashValues").doc(id).delete()
+
+    // * Add discarded question to database
+    firestore.collection("discarded").doc().set(que).then((res) => {
+      console.log(res)
+    })
+
+
+
     firestore
       .collection("questions")
       .doc(quiz)
@@ -130,7 +140,7 @@ export default function Question({
                 ) : null}
                 <Button
                   variant="danger"
-                  onClick={() => discard(quiz, que.id, type)}
+                  onClick={() => discard(quiz, que.id, type, que)}
                   style={{ marginRight: "30px" }}
                 >
                   Discard

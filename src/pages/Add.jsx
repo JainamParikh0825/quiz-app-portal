@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Form, Button, Alert } from "react-bootstrap";
 import { CountryDropdown } from "react-country-region-selector";
 import { storage, firestore } from "../firebase/firebase.utils";
 import { addQuestionToFirestore } from "../firebase/firebase.utils";
+import { Link } from "react-router-dom"
 import hash from "object-hash";
 import "../styles.css";
 
@@ -13,8 +14,6 @@ export default function Add({ user }) {
     { id: 3, value: "History", isChecked: false },
     { id: 4, value: "Movie", isChecked: false },
   ];
-
-  // console.log(user);
 
   const initOptionValue = [
     { id: 1, name: "option1", value: "" },
@@ -44,6 +43,26 @@ export default function Add({ user }) {
       setImage(image);
     }
   };
+
+  const fetchDiscarded = async () => {
+    if (user) {
+
+      const queRef = firestore.collection("discarded")
+      const snapShot = await  queRef.where("draftedBy", "==", user.id).get()
+
+      if (snapShot.empty) {
+        console.log("No discarded questios found")
+      } else {
+        snapShot.forEach(que => {
+          console.log(que.data())
+        })
+      }
+    }
+  }
+
+  useEffect(() => {
+    fetchDiscarded()    
+  }, [user])
 
   const handleUpload = (e) => {
     e.preventDefault();
@@ -90,6 +109,7 @@ export default function Add({ user }) {
     setShowError(false);
     e.preventDefault();
     showCategoryError(false);
+
     let categorySelected = [];
     categories.map((category) => {
       if (category.isChecked) {
@@ -104,6 +124,10 @@ export default function Add({ user }) {
         optionValue.map((opt) => options.push(opt.value));
       }
 
+      const newTitle = title.toLowerCase();
+      const hashValue = hash({ newTitle });
+      console.log(hashValue);
+
       let data = {
         title,
         imageURL: imageUrl,
@@ -113,31 +137,34 @@ export default function Add({ user }) {
         creationDate: new Date().toLocaleString(),
         publishedBy: null,
         publishDate: null,
+        draftedBy: user.id,
+        draftedByEmail: user.email,
         region,
         addedBy: user.email,
+        hash: hashValue,
       };
+      console.log(hashValue);
 
-      const hashValue = hash({ title, optionValue });
-      // console.log(hashValue);
 
       firestore
         .collection("hashValues")
-        .where("hash", "==", hashValue)
+        .doc(hashValue)
         .get()
-        .then((snapshot) => {
-          console.log(snapshot.docs.length);
-          if (snapshot.docs.length !== 1) {
-            firestore
-              .collection("hashValues")
-              .doc(hashValue)
-              .set({
-                hash: hashValue,
-              })
-              .then((doc) => {
-                console.log(doc);
-              });
+        .then((doc) => {
+          if (doc.exists) {
+            console.log("Question already exist");
+            setShowSuccessMsg(true);
+            setMessage("This Question Already Exist!");
+            window.scrollTo(0, 0);
+          } else {
+            // * Create entry in hash database
+            firestore.collection("hashValues").doc(hashValue).set({
+              hash: hashValue,
+            });
+
+            // * Add Questions in respective table
             categorySelected.map(async (category) => {
-              addQuestionToFirestore(data, category)
+              addQuestionToFirestore({ ...data, category}, category, hashValue)
                 .then(() => {
                   setShowSuccessMsg(true);
                   setMessage("Added to Database");
@@ -160,13 +187,57 @@ export default function Add({ user }) {
                   window.scrollTo(0, 0);
                 });
             });
-          } else {
-            setShowSuccessMsg(true);
-            setMessage("Already in the database");
           }
         });
-    } else {
-      showCategoryError(true);
+
+      //   firestore
+      //     .collection("hashValues")
+      //     .where("hash", "==", hashValue)
+      //     .get()
+      //     .then((snapshot) => {
+      //       console.log(snapshot.docs.length);
+      //       if (snapshot.docs.length !== 1) {
+      //         firestore
+      //           .collection("hashValues")
+      //           .doc(hashValue)
+      //           .set({
+      //             hash: hashValue,
+      //           })
+      //           .then((doc) => {
+      //             console.log(doc);
+      //           });
+      //         categorySelected.map(async (category) => {
+      //           addQuestionToFirestore(data, category, hashValue)
+      //             .then(() => {
+      //               setShowSuccessMsg(true);
+      //               setMessage("Added to Database");
+      //               setTimeout(() => {
+      //                 setShowSuccessMsg(false);
+      //               }, 10000);
+      //               setOptionValue(initOptionValue);
+      //               setCategories(initCategoryValue);
+      //               setAnswer("");
+      //               setTitle("");
+      //               setImageUrl("");
+      //               setRegion("");
+      //               setImage(null);
+      //               window.scrollTo(0, 0);
+      //             })
+      //             .catch((err) => {
+      //               setTimeout(() => {
+      //                 setShowError(false);
+      //               }, 10000);
+      //               window.scrollTo(0, 0);
+      //             });
+      //         });
+      //       } else {
+      //         setShowSuccessMsg(true);
+      //         setMessage("Already in the database");
+      //       }
+      //     });
+      // } else {
+      //   showCategoryError(true);
+      // }
     }
   };
 
@@ -192,6 +263,7 @@ export default function Add({ user }) {
                 </Alert>
               ) : null}
               <Form onSubmit={handleSubmit}>
+                <Link to="/discard">Check Discarded Question</Link>
                 <CountryDropdown
                   style={{
                     width: "100%",

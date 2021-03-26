@@ -39,12 +39,12 @@ export const firestore = firebase.firestore();
 
 export const storage = firebase.storage();
 
-export const addQuestionToFirestore = async (data, quiz) => {
+export const addQuestionToFirestore = async (data, quiz, key) => {
   const questionRef = await firestore
     .collection("questions")
     .doc(quiz)
     .collection("DRAFT")
-    .doc()
+    .doc(key)
     .set(data);
   // console.log(questionRef);
 };
