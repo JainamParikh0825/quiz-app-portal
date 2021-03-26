@@ -34,7 +34,7 @@ const Discard = ({ user }) => {
         result.length ? (
           result.map(que => (
             <div key={que.hash}>
-              <h1>{que.title}</h1>
+              <h1>Title: {que.title}</h1>
               <h2>Options:</h2>
               {
                 que.options.map((opt, index) => (
